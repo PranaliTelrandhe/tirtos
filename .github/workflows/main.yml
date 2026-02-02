@@ -21,12 +21,16 @@ jobs:
 
       # 3. Add GCC to PATH
       - name: Add GCC to PATH
-        run: setx PATH "%PATH%;C:\tools\mingw64\bin"
+        run: setx PATH "$env:PATH;C:\msys64\mingw64\bin"
+
+      - name: Verify GCC
+        run: gcc --version
 
       # 4. Build all C files in root
       - name: Build C project
         run: |
           mkdir build
+          Get-ChildItem "C:\msys64\mingw64\bin\gcc.exe" -Recurse
           # Collect all .c files in root folder
           $files = Get-ChildItem -Filter *.c | ForEach-Object { $_.Name }
           $fileList = $files -join " "
