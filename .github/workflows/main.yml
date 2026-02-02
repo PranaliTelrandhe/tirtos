@@ -5,6 +5,7 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
+  workflow_dispatch: # optional manual trigger
 
 jobs:
   build:
@@ -15,29 +16,33 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2. Install GCC
+      # 2. Install GCC via Chocolatey
       - name: Install GCC
         run: choco install mingw -y
 
-      # 3. Add GCC to PATH
+      # 3. Add GCC to PATH temporarily for this workflow
       - name: Add GCC to PATH
-        run: setx PATH "$env:PATH;C:\msys64\mingw64\bin"
+        run: $env:PATH += ";C:\msys64\mingw64\bin"
 
+      # 4. Verify GCC
       - name: Verify GCC
         run: gcc --version
 
-      # 4. Build all C files in root
+      # 5. Build C project (recursively, quote paths)
       - name: Build C project
         run: |
           mkdir build
-          Get-ChildItem "C:\msys64\mingw64\bin\gcc.exe" -Recurse
-          # Collect all .c files in root folder
-          $files = Get-ChildItem -Filter *.c | ForEach-Object { $_.Name }
+          # Collect all .c files recursively
+          $files = Get-ChildItem -Recurse -Filter *.c | ForEach-Object { '"' + $_.FullName + '"' }
           $fileList = $files -join " "
+          Write-Host "Compiling files: $fileList"
           # Compile into executable
           gcc -Wall -Werror -o build\my_program $fileList
 
-      # 5. Run tests
+      # 6. List build folder (optional debug)
+      - name: List build folder
+        run: dir build
+
+      # 7. Run tests
       - name: Run tests
         run: build\my_program --test
-        continue-on-error: true
