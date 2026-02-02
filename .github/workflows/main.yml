@@ -1,4 +1,4 @@
-name: C Build & Test (Windows)
+name: C Build & Test (Windows - All .c Files)
 
 on:
   push:
@@ -12,36 +12,43 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1. Checkout your repository
+      # 1. Checkout repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2. Debug: List repo files to verify checkout
+      # 2. Debug: List all files
       - name: List repo files
-        run: dir
+        run: ls -R
+        shell: bash
 
-      # 3. Install GCC (MinGW) via Chocolatey
+      # 3. Install GCC via Chocolatey
       - name: Install GCC
         run: choco install mingw -y
 
       # 4. Add GCC to PATH
       - name: Add GCC to PATH
-        run: setx PATH "%PATH%;C:\tools\mingw64\bin"
+        run: echo 'export PATH=$PATH:/c/tools/mingw64/bin' >> $GITHUB_ENV
+        shell: bash
 
       # 5. Debug: Check GCC version
       - name: Check GCC version
         run: gcc --version
+        shell: bash
 
-      # 6. Build your C project
+      # 6. Build all .c files recursively
       - name: Build C project
         run: |
-          mkdir build
-          gcc -Wall -Werror -o build\my_program *.c
+          mkdir -p build
+          # Find all .c files in repo and compile into one executable
+          gcc -Wall -Werror -o build/my_program $(find . -name "*.c")
+        shell: bash
 
-      # 7. Debug: Verify binary exists
+      # 7. Debug: List build directory
       - name: List build directory
-        run: dir build
+        run: ls -R build
+        shell: bash
 
-      # 8. Run your program in test mode
+      # 8. Run program in test mode
       - name: Run tests
-        run: build\my_program --test
+        run: ./build/my_program --test
+        shell: bash
