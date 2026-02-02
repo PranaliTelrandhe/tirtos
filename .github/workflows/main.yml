@@ -11,11 +11,11 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1. Checkout the repository
+      # 1. Checkout repo
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2. Install GCC (MinGW)
+      # 2. Install GCC
       - name: Install GCC
         run: choco install mingw -y
 
@@ -23,16 +23,12 @@ jobs:
       - name: Add GCC to PATH
         run: setx PATH "%PATH%;C:\tools\mingw64\bin"
 
-      # 4. Build all .c files recursively
+      # 4. Build all C files in root
       - name: Build C project
         run: |
           mkdir build
-          # Find all .c files recursively and quote paths
-          $cfiles = Get-ChildItem -Recurse -Filter *.c | ForEach-Object { '"' + $_.FullName + '"' }
-          $fileList = $cfiles -join " "
-          # Compile all .c files into one executable
-          gcc -Wall -Werror -o build\my_program $fileList
+          gcc -Wall -Werror -o build\my_program *.c
 
-      # 5. Run program in test mode
+      # 5. Run tests
       - name: Run tests
         run: build\my_program --test
