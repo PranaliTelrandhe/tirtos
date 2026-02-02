@@ -1,31 +1,35 @@
-name: C Build & Test
+name: C Build & Test (Windows)
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: windows-latest
 
     steps:
-    - name: Checkout repo
-      uses: actions/checkout@v3
+      - name: Checkout repo
+        uses: actions/checkout@v3
 
-    - name: Install GCC
-      run: sudo apt-get update && sudo apt-get install -y build-essential
+      - name: Install GCC
+        run: choco install mingw -y
 
-    - name: Build C project
-      run: |
-        mkdir -p build
-        gcc -Wall -Werror -o build/my_program *.c
+      - name: Add GCC to PATH
+        run: setx PATH "%PATH%;C:\tools\mingw64\bin"
 
-    - name: Run tests
-      run: |
-        if [ -f test.sh ]; then
-          bash test.sh
-        else
-          echo "No tests found, skipping"
-        fi
+      - name: Build C project
+        run: |
+          mkdir build
+          gcc -Wall -Werror -o build\my_program *.c
+
+      - name: Run tests
+        shell: bash
+        run: |
+          if [ -f test.sh ]; then
+            bash test.sh
+          else
+            echo "No tests found, skipping"
+          fi
