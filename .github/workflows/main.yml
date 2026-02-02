@@ -1,46 +1,38 @@
-name: C Build & Test (Windows - All .c Files)
+name: C Build & Test (Windows)
 
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
-  workflow_dispatch:
 
 jobs:
-  build-windows:
+  build:
     runs-on: windows-latest
 
     steps:
+      # 1. Checkout the repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      - name: List repo files
-        run: dir /s
-
+      # 2. Install GCC (MinGW)
       - name: Install GCC
         run: choco install mingw -y
 
+      # 3. Add GCC to PATH
       - name: Add GCC to PATH
         run: setx PATH "%PATH%;C:\tools\mingw64\bin"
 
-      - name: Check GCC version
-        run: gcc --version
-
-      - name: Build C project (all .c files recursively)
-        shell: powershell
+      # 4. Build all .c files recursively
+      - name: Build C project
         run: |
           mkdir build
-          $files = Get-ChildItem -Recurse -Filter *.c | ForEach-Object {
-              $_.FullName.Replace($PWD.Path + "\", "").Replace("\", "/")
-          }
-          $quotedFiles = $files | ForEach-Object { "`"$($_)`"" }
-          $fileList = $quotedFiles -join " "
-          gcc -Wall -Werror -o build/my_program $fileList
+          # Find all .c files recursively and quote paths
+          $cfiles = Get-ChildItem -Recurse -Filter *.c | ForEach-Object { '"' + $_.FullName + '"' }
+          $fileList = $cfiles -join " "
+          # Compile all .c files into one executable
+          gcc -Wall -Werror -o build\my_program $fileList
 
-      - name: List build directory
-        run: dir build
-
+      # 5. Run program in test mode
       - name: Run tests
-        shell: powershell
-        run: build/my_program --test
+        run: build\my_program --test
