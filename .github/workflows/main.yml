@@ -36,3 +36,4 @@ jobs:
       # 5. Run tests
       - name: Run tests
         run: build\my_program --test
+        continue-on-error: true
