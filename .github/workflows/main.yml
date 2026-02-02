@@ -5,21 +5,20 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
-  workflow_dispatch: # Manual trigger
+  workflow_dispatch:
 
 jobs:
   build-windows:
     runs-on: windows-latest
 
     steps:
-      # 1. Checkout repository
+      # 1. Checkout repo
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2. Debug: List all files
-      - name: List repo files
-        run: ls -R
-        shell: bash
+      # 2. Debug: List repo files
+      - name: List all files
+        run: dir /s
 
       # 3. Install GCC via Chocolatey
       - name: Install GCC
@@ -27,28 +26,29 @@ jobs:
 
       # 4. Add GCC to PATH
       - name: Add GCC to PATH
-        run: echo 'export PATH=$PATH:/c/tools/mingw64/bin' >> $GITHUB_ENV
-        shell: bash
+        run: setx PATH "%PATH%;C:\tools\mingw64\bin"
 
-      # 5. Debug: Check GCC version
+      # 5. Debug: Check GCC
       - name: Check GCC version
         run: gcc --version
-        shell: bash
 
-      # 6. Build all .c files recursively
+      # 6. Build all .c files recursively using PowerShell
       - name: Build C project
+        shell: powershell
         run: |
-          mkdir -p build
-          # Find all .c files in repo and compile into one executable
-          gcc -Wall -Werror -o build/my_program $(find . -name "*.c")
-        shell: bash
+          mkdir build
+          # Get all .c files recursively
+          $files = Get-ChildItem -Recurse -Filter *.c | ForEach-Object { $_.FullName }
+          # Join all files into a single string
+          $fileList = $files -join " "
+          # Compile all .c files into one executable
+          gcc -Wall -Werror -o build\my_program $fileList
 
-      # 7. Debug: List build directory
+      # 7. Debug: Verify binary exists
       - name: List build directory
-        run: ls -R build
-        shell: bash
+        run: dir build
 
       # 8. Run program in test mode
       - name: Run tests
-        run: ./build/my_program --test
-        shell: bash
+        shell: powershell
+        run: build\my_program --test
