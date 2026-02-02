@@ -12,43 +12,35 @@ jobs:
     runs-on: windows-latest
 
     steps:
-      # 1. Checkout repo
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2. Debug: List repo files
-      - name: List all files
+      - name: List repo files
         run: dir /s
 
-      # 3. Install GCC via Chocolatey
       - name: Install GCC
         run: choco install mingw -y
 
-      # 4. Add GCC to PATH
       - name: Add GCC to PATH
         run: setx PATH "%PATH%;C:\tools\mingw64\bin"
 
-      # 5. Debug: Check GCC
       - name: Check GCC version
         run: gcc --version
 
-      # 6. Build all .c files recursively using PowerShell
-      - name: Build C project
+      - name: Build C project (all .c files recursively)
         shell: powershell
         run: |
           mkdir build
-          # Get all .c files recursively
-          $files = Get-ChildItem -Recurse -Filter *.c | ForEach-Object { $_.FullName }
-          # Join all files into a single string
-          $fileList = $files -join " "
-          # Compile all .c files into one executable
-          gcc -Wall -Werror -o build\my_program $fileList
+          $files = Get-ChildItem -Recurse -Filter *.c | ForEach-Object {
+              $_.FullName.Replace($PWD.Path + "\", "").Replace("\", "/")
+          }
+          $quotedFiles = $files | ForEach-Object { "`"$($_)`"" }
+          $fileList = $quotedFiles -join " "
+          gcc -Wall -Werror -o build/my_program $fileList
 
-      # 7. Debug: Verify binary exists
       - name: List build directory
         run: dir build
 
-      # 8. Run program in test mode
       - name: Run tests
         shell: powershell
-        run: build\my_program --test
+        run: build/my_program --test
