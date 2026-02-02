@@ -26,10 +26,4 @@ jobs:
           gcc -Wall -Werror -o build\my_program *.c
 
       - name: Run tests
-        shell: bash
-        run: |
-          if [ -f test.sh ]; then
-            bash test.sh
-          else
-            echo "No tests found, skipping"
-          fi
+        run: build\my_program --test
