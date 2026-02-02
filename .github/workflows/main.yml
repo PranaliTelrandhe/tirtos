@@ -5,25 +5,25 @@ on:
     branches: [master]
   pull_request:
     branches: [master]
-  workflow_dispatch: # optional manual trigger
+  workflow_dispatch: # allows manual run
 
 jobs:
   build:
     runs-on: windows-latest
 
     steps:
-      # 1. Checkout repo
+      # 1. Checkout repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2. Install GCC via Chocolatey
+      # 2. Install MSYS2 and GCC
       - name: Install MSYS2 and GCC
         uses: msys2/setup-msys2@v2
         with:
           update: true
-          install: mingw-w64-x86_64-gcc
+          install: mingw-w64-x86_64-gcc make
 
-      # 3. Add GCC to PATH temporarily for this workflow
+      # 3. Add GCC to PATH for workflow
       - name: Add GCC to PATH
         run: $env:PATH += ";C:\msys64\mingw64\bin"
 
@@ -31,21 +31,29 @@ jobs:
       - name: Verify GCC
         run: gcc --version
 
-      # 5. Build C project (recursively, quote paths)
+      # 5. Build all .c files recursively
       - name: Build C project
         run: |
-          mkdir build
-          # Collect all .c files recursively
-          $files = Get-ChildItem -Recurse -Filter *.c | ForEach-Object { '"' + $_.FullName + '"' }
-          $fileList = $files -join " "
-          Write-Host "Compiling files: $fileList"
-          # Compile into executable
-          gcc -Wall -Werror -o build\my_program $fileList
+          # Ensure PATH is available
+          $env:PATH += ";C:\msys64\mingw64\bin"
 
-      # 6. List build folder (optional debug)
+          # Create build directory
+          mkdir build
+
+          # Collect all .c files recursively in repo
+          $files = Get-ChildItem -Recurse -Filter *.c | ForEach-Object { $_.FullName }
+
+          # Debug: show files to be compiled
+          Write-Host "Compiling files:"
+          $files | ForEach-Object { Write-Host $_ }
+
+          # Compile all files
+          gcc -Wall -Werror -o build\my_program @($files)
+
+      # 6. List build folder for verification
       - name: List build folder
         run: dir build
 
-      # 7. Run tests
+      # 7. Run program in test mode
       - name: Run tests
         run: build\my_program --test
