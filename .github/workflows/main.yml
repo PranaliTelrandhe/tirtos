@@ -32,23 +32,27 @@ jobs:
         run: gcc --version
 
       # 5. Build all .c files recursively
+      # 5. Build all .c files recursively (relative paths)
       - name: Build C project
         run: |
-          # Ensure PATH is available
-          $env:PATH += ";C:\msys64\mingw64\bin"
+            # Ensure PATH is available
+              $env:PATH += ";C:\msys64\mingw64\bin"
 
-          # Create build directory
-          mkdir build
+      # Create build directory
+       mkdir build
 
-          # Collect all .c files recursively in repo
-          $files = Get-ChildItem -Recurse -Filter *.c | ForEach-Object { $_.FullName }
+        # Collect all .c files recursively in repo, convert to relative paths
+          $files = Get-ChildItem -Recurse -Filter *.c | ForEach-Object {
+          $_.FullName.Replace("$pwd\", ".\")
+        }
 
-          # Debug: show files to be compiled
-          Write-Host "Compiling files:"
-          $files | ForEach-Object { Write-Host $_ }
+        # Debug: show files being compiled
+        Write-Host "Compiling files:"
+         $files | ForEach-Object { Write-Host $_ }
 
-          # Compile all files
-          gcc -Wall -Werror -o build\my_program @($files)
+    # Compile all files
+       gcc -Wall -Werror -o build\my_program @($files)
+
 
       # 6. List build folder for verification
       - name: List build folder
