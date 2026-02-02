@@ -25,9 +25,10 @@ jobs:
 
       # 4. Build all C files in root
       - name: Build C project
-        run: |
-          mkdir build
-          gcc -Wall -Werror -o build\my_program *.c
+        run:  mkdir build
+                 $files = Get-ChildItem -Filter *.c | ForEach-Object { $_.Name }
+                 $fileList = $files -join " "
+                  gcc -Wall -Werror -o build\my_program $fileList
 
       # 5. Run tests
       - name: Run tests
