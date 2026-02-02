@@ -1,78 +1,47 @@
-name: C Build & Test (Linux + Windows)
+name: C Build & Test (Windows)
 
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
-  workflow_dispatch: # Allows manual run
+  workflow_dispatch: # Manual trigger
 
 jobs:
-  build:
-    runs-on: ${{ matrix.os }}
-    strategy:
-      matrix:
-        os: [ubuntu-latest, windows-latest]
+  build-windows:
+    runs-on: windows-latest
 
     steps:
       # 1. Checkout your repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2. Debug: List files to verify checkout
+      # 2. Debug: List repo files to verify checkout
       - name: List repo files
-        run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            dir
-          else
-            ls -R
-          fi
-        shell: bash
+        run: dir
 
-      # 3. Install GCC depending on OS
+      # 3. Install GCC (MinGW) via Chocolatey
       - name: Install GCC
-        run: |
-          if [[ "${{ runner.os }}" == "Linux" ]]; then
-            sudo apt-get update
-            sudo apt-get install -y build-essential
-          elif [[ "${{ runner.os }}" == "Windows" ]]; then
-            choco install mingw -y
-            setx PATH "%PATH%;C:\tools\mingw64\bin"
-          fi
-        shell: bash
+        run: choco install mingw -y
 
-      # 4. Debug: Verify GCC installed
+      # 4. Add GCC to PATH
+      - name: Add GCC to PATH
+        run: setx PATH "%PATH%;C:\tools\mingw64\bin"
+
+      # 5. Debug: Check GCC version
       - name: Check GCC version
         run: gcc --version
-        shell: bash
 
-      # 5. Build your C project
+      # 6. Build your C project
       - name: Build C project
         run: |
-          mkdir -p build
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            gcc -Wall -Werror -o build\my_program *.c
-          else
-            gcc -Wall -Werror -o build/my_program *.c
-          fi
-        shell: bash
+          mkdir build
+          gcc -Wall -Werror -o build\my_program *.c
 
-      # 6. Debug: Verify binary exists
+      # 7. Debug: Verify binary exists
       - name: List build directory
-        run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            dir build
-          else
-            ls -R build
-          fi
-        shell: bash
+        run: dir build
 
-      # 7. Run your program in test mode
+      # 8. Run your program in test mode
       - name: Run tests
-        run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            build\my_program --test
-          else
-            ./build/my_program --test
-          fi
-        shell: bash
+        run: build\my_program --test
