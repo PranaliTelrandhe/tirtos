@@ -1,29 +1,72 @@
-name: C Build & Test (Windows)
+name: C Build & Test (Cross-Platform)
 
 on:
   push:
     branches: [master]
   pull_request:
     branches: [master]
+  workflow_dispatch: # Allows manual run
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
 
     steps:
+      # 1. Checkout your repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
+      # 2. Debug: List files to verify checkout
+      - name: List repo files
+        run: ls -R
+        shell: bash
+
+      # 3. Install GCC depending on OS
       - name: Install GCC
-        run: choco install mingw -y
+        run: |
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y build-essential
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            brew install gcc
+          elif [[ "${{ runner.os }}" == "Windows" ]]; then
+            choco install mingw -y
+            setx PATH "%PATH%;C:\tools\mingw64\bin"
+          fi
+        shell: bash
 
-      - name: Add GCC to PATH
-        run: setx PATH "%PATH%;C:\tools\mingw64\bin"
+      # 4. Debug: Verify GCC installed
+      - name: Check GCC version
+        run: |
+          gcc --version
+        shell: bash
 
+      # 5. Build your C project
       - name: Build C project
         run: |
-          mkdir build
-          gcc -Wall -Werror -o build\my_program *.c
+          mkdir -p build
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            gcc -Wall -Werror -o build\my_program *.c
+          else
+            gcc -Wall -Werror -o build/my_program *.c
+          fi
+        shell: bash
 
+      # 6. Debug: Verify binary exists
+      - name: List build directory
+        run: |
+          ls -R build
+        shell: bash
+
+      # 7. Run your program in test mode
       - name: Run tests
-        run: build\my_program --test
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            build\my_program --test
+          else
+            ./build/my_program --test
+          fi
+        shell: bash
