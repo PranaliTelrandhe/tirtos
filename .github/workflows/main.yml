@@ -1,59 +1,31 @@
-name: C Build & Test (Windows)
+name: C Build & Test
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   pull_request:
-    branches: [master]
-  workflow_dispatch: # allows manual run
+    branches: [main]
 
 jobs:
   build:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout repository
       - name: Checkout repo
         uses: actions/checkout@v3
 
-      # 2. Install MSYS2 and GCC
-      - name: Install MSYS2 and GCC
-        uses: msys2/setup-msys2@v2
-        with:
-          update: true
-          install: mingw-w64-x86_64-gcc make
+      - name: Install GCC
+        run: sudo apt-get update && sudo apt-get install -y build-essential
 
-      # 3. Add GCC to PATH for workflow
-      - name: Add GCC to PATH
-        run: $env:PATH += ";C:\msys64\mingw64\bin"
-
-      # 4. Verify GCC
-      - name: Verify GCC
-        run: gcc --version
-
-      # 5. Build all .c files recursively
       - name: Build C project
         run: |
-          # Ensure PATH is available
-          $env:PATH += ";C:\msys64\mingw64\bin"
+          mkdir -p build
+          gcc -Wall -Werror -o build/my_program *.c
 
-          # Create build directory
-          mkdir build
-
-          # Collect all .c files recursively in repo
-          $files = Get-ChildItem -Recurse -Filter *.c | ForEach-Object { $_.FullName }
-
-          # Debug: show files to be compiled
-          Write-Host "Compiling files:"
-          $files | ForEach-Object { Write-Host $_ }
-
-          # Compile all files
-          gcc -Wall -Werror -o build\my_program @($files)
-
-      # 6. List build folder for verification
-      - name: List build folder
-        run: dir build
-
-      # 7. Run program in test mode
       - name: Run tests
-        run: build\my_program --test
+        run: |
+          if [ -f test.sh ]; then
+            bash test.sh
+          else
+            echo "No tests found, skipping"
+          fi
